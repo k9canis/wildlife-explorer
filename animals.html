@@ -1,36 +1,57 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Animals — Wildlife Explorer</title>
+  <title>Explore · Wildlife Field Journal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <header class="site-header">
-    <a class="logo" href="index.html">🦉 Wildlife Explorer</a>
-    <nav>
-      <a href="index.html">Home</a>
-      <a href="animals.html">Animals</a>
-      <a href="add-animal.html">＋ Add Animal</a>
-    </nav>
+    <div class="header-inner">
+      <a class="brand" href="index.html"><span class="brand-mark">✦</span><span><strong>Wildlife</strong><em>Field Journal</em></span></a>
+      <nav><a href="index.html">Home</a><a class="active" href="animals.html">Explore</a><a href="add-animal.html">Add Species</a></nav>
+    </div>
   </header>
 
-  <main class="page">
-    <div class="page-heading">
-      <div>
-        <p class="eyebrow">EXPLORE</p>
-        <h1 id="pageTitle">All Animals</h1>
+  <main class="page-shell">
+    <section class="page-intro">
+      <p class="eyebrow">FIELD GUIDE INDEX</p>
+      <h1>Explore the collection</h1>
+      <p>Search through your species records or narrow the journal by animal group.</p>
+    </section>
+
+    <section class="controls paper-section">
+      <div class="control">
+        <label for="animalSearch">Search</label>
+        <input id="animalSearch" type="search" placeholder="Common name, scientific name, family...">
       </div>
-      <button class="primary" onclick="randomAnimal()">🎲 Random</button>
-    </div>
+      <div class="control">
+        <label for="groupFilter">Animal group</label>
+        <select id="groupFilter">
+          <option value="">All groups</option>
+        </select>
+      </div>
+      <div class="control control-button">
+        <button class="button button-secondary" id="clearFilters">Clear filters</button>
+      </div>
+    </section>
 
-    <div class="search-box compact">
-      <input id="animalSearch" type="search" placeholder="Search animals..." autocomplete="off">
+    <div class="results-meta">
+      <span id="resultCount"></span>
     </div>
-
-    <div id="results" class="animal-grid"></div>
+    <div class="animal-grid" id="animalGrid"></div>
+    <div class="empty-state hidden" id="emptyState">
+      <h2>No entries found</h2>
+      <p>Try a different search or add a new species to your journal.</p>
+      <a class="button button-primary" href="add-animal.html">Add a species</a>
+    </div>
   </main>
+
+  <footer class="site-footer"><p>Wildlife Field Journal · Explore</p></footer>
   <script src="app.js"></script>
 </body>
 </html>

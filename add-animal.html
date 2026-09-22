@@ -1,45 +1,67 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Add Animal — Wildlife Explorer</title>
+  <title>Add Species · Wildlife Field Journal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <header class="site-header">
-    <a class="logo" href="index.html">🦉 Wildlife Explorer</a>
-    <nav>
-      <a href="index.html">Home</a>
-      <a href="animals.html">Animals</a>
-      <a href="add-animal.html">＋ Add Animal</a>
-    </nav>
+    <div class="header-inner">
+      <a class="brand" href="index.html"><span class="brand-mark">✦</span><span><strong>Wildlife</strong><em>Field Journal</em></span></a>
+      <nav><a href="index.html">Home</a><a href="animals.html">Explore</a><a class="active" href="add-animal.html">Add Species</a></nav>
+    </div>
   </header>
 
-  <main class="page narrow">
-    <p class="eyebrow">DATABASE EDITOR</p>
-    <h1>Add an animal</h1>
-    <p class="subtitle">This is your first simple animal-entry system. We'll expand it as the project grows.</p>
+  <main class="page-shell narrow">
+    <section class="page-intro">
+      <p class="eyebrow">NEW FIELD RECORD</p>
+      <h1>Add a species</h1>
+      <p>You don't need to code a new page. Fill this out once, and the site creates the species record for you.</p>
+    </section>
 
-    <form id="animalForm" class="form-card">
-      <label>Common name<input name="name" required placeholder="American Kestrel"></label>
-      <label>Scientific name<input name="scientificName" placeholder="Falco sparverius"></label>
-      <label>Group
-        <select name="group">
-          <option>Birds</option><option>Mammals</option><option>Fish</option>
-          <option>Reptiles</option><option>Amphibians</option><option>Invertebrates</option>
-        </select>
-      </label>
-      <label>Family<input name="family" placeholder="Falconidae"></label>
-      <label>Photo URL<input name="image" placeholder="https://..."></label>
-      <label>Description<textarea name="description" rows="5" placeholder="What is this animal?"></textarea></label>
-      <label>Habitat<textarea name="habitat" rows="3" placeholder="Where does it live?"></textarea></label>
-      <label>Diet<textarea name="diet" rows="3" placeholder="What does it eat?"></textarea></label>
-      <label>Fun facts<textarea name="facts" rows="4" placeholder="Interesting things to learn..."></textarea></label>
-      <button class="primary" type="submit">Save animal</button>
+    <form class="paper-form" id="animalForm">
+      <div class="form-section">
+        <p class="form-kicker">IDENTITY</p>
+        <div class="form-grid">
+          <div class="field"><label for="commonName">Common name *</label><input id="commonName" name="commonName" required placeholder="American Kestrel"></div>
+          <div class="field"><label for="scientificName">Scientific name</label><input id="scientificName" name="scientificName" placeholder="Falco sparverius"></div>
+          <div class="field"><label for="group">Animal group *</label><input id="group" name="group" required placeholder="Birds"></div>
+          <div class="field"><label for="family">Family</label><input id="family" name="family" placeholder="Falconidae"></div>
+          <div class="field"><label for="genus">Genus</label><input id="genus" name="genus" placeholder="Falco"></div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <p class="form-kicker">FIELD DESCRIPTION</p>
+        <div class="field"><label for="photo">Main photo URL</label><input id="photo" name="photo" type="url" placeholder="https://..."></div>
+        <div class="field"><label for="identification">Identification</label><textarea id="identification" name="identification" placeholder="How to recognize this species in the field..."></textarea></div>
+        <div class="form-grid">
+          <div class="field"><label for="habitat">Habitat</label><textarea id="habitat" name="habitat" placeholder="Where it lives..."></textarea></div>
+          <div class="field"><label for="diet">Diet</label><textarea id="diet" name="diet" placeholder="What it eats..."></textarea></div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <p class="form-kicker">NOTES</p>
+        <div class="field"><label for="facts">Fun facts</label><textarea id="facts" name="facts" placeholder="Interesting facts, behavior, adaptations, records..."></textarea></div>
+        <div class="field"><label for="notes">My field notes</label><textarea id="notes" name="notes" placeholder="Your own observations or notes..."></textarea></div>
+        <div class="field"><label for="sources">Sources</label><textarea id="sources" name="sources" placeholder="Sources you used to research this species..."></textarea></div>
+      </div>
+
+      <div class="form-actions">
+        <a class="button button-secondary" href="animals.html">Cancel</a>
+        <button class="button button-primary" type="submit">Save species record</button>
+      </div>
+      <p class="form-note">V2 stores entries in this browser for now. The future database version can hold tens of thousands of species and make them available across devices.</p>
     </form>
-    <p id="saveMessage" class="message"></p>
   </main>
+
+  <footer class="site-footer"><p>Wildlife Field Journal · Add Species</p></footer>
   <script src="app.js"></script>
 </body>
 </html>
