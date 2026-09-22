@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Animal — Wildlife Explorer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="logo" href="index.html">🦉 Wildlife Explorer</a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="animals.html">Animals</a>
+      <a href="add-animal.html">＋ Add Animal</a>
+    </nav>
+  </header>
+
+  <main class="page narrow">
+    <p class="eyebrow">DATABASE EDITOR</p>
+    <h1>Add an animal</h1>
+    <p class="subtitle">This is your first simple animal-entry system. We'll expand it as the project grows.</p>
+
+    <form id="animalForm" class="form-card">
+      <label>Common name<input name="name" required placeholder="American Kestrel"></label>
+      <label>Scientific name<input name="scientificName" placeholder="Falco sparverius"></label>
+      <label>Group
+        <select name="group">
+          <option>Birds</option><option>Mammals</option><option>Fish</option>
+          <option>Reptiles</option><option>Amphibians</option><option>Invertebrates</option>
+        </select>
+      </label>
+      <label>Family<input name="family" placeholder="Falconidae"></label>
+      <label>Photo URL<input name="image" placeholder="https://..."></label>
+      <label>Description<textarea name="description" rows="5" placeholder="What is this animal?"></textarea></label>
+      <label>Habitat<textarea name="habitat" rows="3" placeholder="Where does it live?"></textarea></label>
+      <label>Diet<textarea name="diet" rows="3" placeholder="What does it eat?"></textarea></label>
+      <label>Fun facts<textarea name="facts" rows="4" placeholder="Interesting things to learn..."></textarea></label>
+      <button class="primary" type="submit">Save animal</button>
+    </form>
+    <p id="saveMessage" class="message"></p>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

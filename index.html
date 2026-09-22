@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wildlife Explorer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="logo" href="index.html">🦉 Wildlife Explorer</a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="animals.html">Animals</a>
+      <a href="add-animal.html">＋ Add Animal</a>
+    </nav>
+  </header>
+
+  <main class="hero">
+    <p class="eyebrow">YOUR WILDLIFE DATABASE</p>
+    <h1>Discover an animal.</h1>
+    <p class="subtitle">Search, browse, or let the site choose something completely random.</p>
+
+    <div class="search-box">
+      <input id="homeSearch" type="search" placeholder="Search for an animal..." autocomplete="off">
+      <button onclick="searchFromHome()">Search</button>
+    </div>
+
+    <div class="hero-actions">
+      <button class="primary" onclick="randomAnimal()">🎲 Random Animal</button>
+      <a class="button secondary" href="animals.html">Browse all animals</a>
+    </div>
+
+    <section class="groups">
+      <h2>Explore by group</h2>
+      <div class="group-grid">
+        <a href="animals.html?group=Birds">🐦<span>Birds</span></a>
+        <a href="animals.html?group=Mammals">🐺<span>Mammals</span></a>
+        <a href="animals.html?group=Fish">🐟<span>Fish</span></a>
+        <a href="animals.html?group=Reptiles">🦎<span>Reptiles</span></a>
+        <a href="animals.html?group=Amphibians">🐸<span>Amphibians</span></a>
+        <a href="animals.html?group=Invertebrates">🦋<span>Invertebrates</span></a>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

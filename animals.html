@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Animals — Wildlife Explorer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="logo" href="index.html">🦉 Wildlife Explorer</a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="animals.html">Animals</a>
+      <a href="add-animal.html">＋ Add Animal</a>
+    </nav>
+  </header>
+
+  <main class="page">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">EXPLORE</p>
+        <h1 id="pageTitle">All Animals</h1>
+      </div>
+      <button class="primary" onclick="randomAnimal()">🎲 Random</button>
+    </div>
+
+    <div class="search-box compact">
+      <input id="animalSearch" type="search" placeholder="Search animals..." autocomplete="off">
+    </div>
+
+    <div id="results" class="animal-grid"></div>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
