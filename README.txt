@@ -1,48 +1,31 @@
-WILDLIFE FIELD JOURNAL V2
-==========================
+WILDLIFE EXPLORER V4
 
-This is V2 of your Wildlife Field Journal website.
+Includes:
+- Categories: Birds, Mammals, Fish, Reptiles, Amphibians, Invertebrates, Other
+- Order, Family, and Genus, each with scientific and human-readable names
+- Countries, habitat, range map, generational length, migratory status
+- Identification and diet
+- Conservation status, trend, threats
+- Main photograph and multi-photo gallery
+- Fun facts
+- Edit existing entries
+- Delete accidental entries with confirmation
+- Search and category filtering
+- Naturalist field-guide design
+- Older records using "group" are migrated to "category"
 
-WHAT CHANGED
-------------
-- Naturalist / field-journal visual design
-- Cream paper background, forest-green header, brown naturalist accents
-- Cleaner species records with taxonomy and field-note sections
-- Search across common name, scientific name, family, genus, group, and habitat
-- Group browsing
-- Random animal button
-- Easy "Add Species" form — no coding a new HTML page for each animal
-- Existing V1 localStorage key is preserved: wildlifeExplorerAnimals
+UPDATE YOUR GITHUB PAGES SITE
+1. Unzip this ZIP.
+2. Open your existing wildlife-explorer repository.
+3. Add file -> Upload files.
+4. Replace the seven website files.
+5. Commit changes.
+6. Wait for GitHub Pages to rebuild.
+7. Refresh your site.
 
-IMPORTANT
----------
-V2 still uses browser localStorage. That means species you add through the form are saved in the browser you're using, not in the GitHub repository.
+Do not upload the ZIP itself as a website file.
 
-This is intentional for this step. The next major upgrade should replace localStorage with a real database/backend so the collection can scale toward 70,000+ species and work across devices.
+DATA NOTE
+Species are currently stored in browser localStorage under wildlifeExplorerAnimals. Editing updates the existing record rather than creating a duplicate. Deleting requires confirmation.
 
-GITHUB PAGES UPDATE
--------------------
-1. Unzip this folder.
-2. Open your existing wildlife-explorer GitHub repository.
-3. Choose Add file -> Upload files.
-4. Drag the V2 files into the upload area.
-5. Commit the changes.
-6. GitHub Pages will rebuild the site.
-7. Refresh your live site.
-
-Replace the existing files with these V2 files:
-- index.html
-- animals.html
-- animal.html
-- add-animal.html
-- styles.css
-- app.js
-- README.txt
-
-Do NOT upload the ZIP itself as the website files.
-
-DATA SAFETY
------------
-Because the same localStorage key is used as V1, species already added through the V1 Add Animal page should remain in the same browser when you update the website.
-
-For the eventual 70,000+ species version, use a real database and bulk import rather than manually entering every species through this form.
+For the eventual 70,000+ species version, the next major step is a real online database/backend so entries can sync across devices and be bulk imported.
