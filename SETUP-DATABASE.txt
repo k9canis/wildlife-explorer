@@ -1,0 +1,13 @@
+WILDLIFE EXPLORER: ONLINE DATABASE SETUP
+
+1. Create a project at https://supabase.com/dashboard.
+2. In Authentication > Users, add yourself as a user with an email and password. Copy your user's UUID from the Users list. Do not put your password in website files.
+3. Open database.sql. Replace every YOUR_USER_UUID with that UUID. Run the SQL in your project's SQL Editor.
+4. In the project's Connect panel, copy the Project URL and publishable key. Put them into db-config.js between the quotes for url and publishableKey. Never put a secret/service_role key in this file.
+5. Upload all website files (including db-config.js) to the root of your GitHub repository. Commit and wait for Pages to rebuild; then hard-refresh the website.
+6. Open Add Species and sign in. If you saved entries in this same browser before, click "Import species saved in this browser" once. That includes the two starter entries when they are present locally. Open Explore to verify they appear.
+7. Add a new test species. Open the site in another browser or device to confirm it appears there too.
+
+Until step 4 is complete, the website uses browser-only saving. Browser-only entries are visible only in the same browser on the same site origin. The import button becomes available after you configure the online database and sign in on the same browser used for the entries.
+
+Security: the database SQL lets the public read species and allows only your Supabase user UUID to add, edit, or delete them. Do not replace the owner policies with public write policies.
