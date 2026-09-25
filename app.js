@@ -29,11 +29,15 @@ async function explore(){
 
   const categoryOrder = ["Birds","Mammals","Fish","Reptiles","Amphibians","Invertebrates","Other"];
 
-  function orderName(species){
-    const sci = String(species.order || "").trim();
-    const common = String(species.orderCommon || "").trim();
-    if (!sci && !common) return "Unspecified order";
-    if (sci && common && sci.toLowerCase() !== common.toLowerCase()) return sci + " — " + common;
+  function taxonKey(species, rank){
+    return String(species[rank] || species[rank + "Common"] || "unspecified").trim().toLocaleLowerCase();
+  }
+
+  function taxonName(species, rank){
+    const sci = String(species[rank] || "").trim();
+    const common = String(species[rank + "Common"] || "").trim();
+    if (!sci && !common) return "Unspecified " + rank;
+    if (sci && common && sci.toLocaleLowerCase() !== common.toLocaleLowerCase()) return sci + " — " + common;
     return sci || common;
   }
 
@@ -74,24 +78,33 @@ async function explore(){
       const orderMap = new Map();
 
       categorySpecies.forEach(species => {
-        const key = orderName(species);
-        if (!orderMap.has(key)) orderMap.set(key, []);
-        orderMap.get(key).push(species);
+        const orderKey = taxonKey(species, "order");
+        if (!orderMap.has(orderKey)) orderMap.set(orderKey, {name:taxonName(species,"order"), families:new Map(), count:0});
+        const order = orderMap.get(orderKey);
+        order.count++;
+        const familyKey = taxonKey(species, "family");
+        if (!order.families.has(familyKey)) order.families.set(familyKey, {name:taxonName(species,"family"), species:[]});
+        order.families.get(familyKey).species.push(species);
       });
 
-      const orders = [...orderMap.entries()].sort((a,b) => a[0].localeCompare(b[0]));
+      const orders = [...orderMap.values()].sort((a,b) => a.name.localeCompare(b.name));
 
       return '<section class="explore-category">' +
         '<div class="explore-category-head"><h2>' + esc(categoryName) + '</h2><span>' +
         categorySpecies.length + ' species</span></div>' +
         '<div class="order-groups">' +
-        orders.map(([name, species]) =>
-          '<details class="order-group">' +
-          '<summary><span class="order-title">' + esc(name) + '</span>' +
-          '<span class="order-count">' + species.length + ' species</span></summary>' +
-          '<div class="order-species">' + species.map(card).join("") + '</div>' +
-          '</details>'
-        ).join("") +
+        orders.map(order => {
+          const families = [...order.families.values()].sort((a,b) => a.name.localeCompare(b.name));
+          return '<details class="order-group">' +
+            '<summary><span class="order-title">' + esc(order.name) + '</span>' +
+            '<span class="order-count">' + families.length + ' ' + (families.length === 1 ? 'family' : 'families') + ' · ' + order.count + ' species</span></summary>' +
+            '<div class="family-groups">' + families.map(family =>
+              '<section class="family-group"><div class="family-head"><h3>' + esc(family.name) + '</h3><span>' +
+              family.species.length + ' species</span></div><div class="family-species">' +
+              family.species.sort((a,b) => String(a.commonName || "").localeCompare(String(b.commonName || ""))).map(card).join("") +
+              '</div></section>'
+            ).join("") + '</div></details>';
+        }).join("") +
         '</div></section>';
     }).join("");
   }
