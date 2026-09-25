@@ -1,5 +1,4 @@
-// Fill these in after creating your Supabase project. Until then, the site saves in this browser.
 window.WILDLIFE_DB = {
-  url: '',
-  publishableKey: ''
+  url: 'https://gqchxcovvikrfhaihjos.supabase.co',
+  publishableKey: 'sb_publishable_4dQr13cba78XBHRnMRAScA_eg43ditB'
 };
