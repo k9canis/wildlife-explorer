@@ -16,39 +16,95 @@ async function random(){let a=await get();location.href="animal.html?id="+encode
 function card(a){let img=a.photo||(a.gallery||[])[0];return `<a class="card" href="animal.html?id=${encodeURIComponent(a.id)}">${img?`<img src="${esc(img)}" alt="${esc(a.commonName)}">`:"<div class=empty>No photograph</div>"}<div><span class=tag>${esc(a.category)}</span><h3>${esc(a.commonName)}</h3><div class=sci>${esc(a.scientificName||"")}</div></div></a>`}
 async function home(){let a=await get(),cs=["Birds","Mammals","Fish","Reptiles","Amphibians","Invertebrates","Other"];cats.innerHTML=cs.map((c,i)=>{let n=a.filter(x=>x.category===c).length;return `<a class="cat" href="animals.html?category=${encodeURIComponent(c)}"><span class="cat-top"><span class="cat-index">${String(i+1).padStart(2,"0")}</span><span class="cat-arrow" aria-hidden="true">↗</span></span><span class="cat-name">${c}</span><span class="cat-count">${n} species in the journal</span></a>`}).join("");recent.innerHTML=a.slice(-6).reverse().map(card).join("");document.getElementById("random").onclick=random;go.onclick=()=>location.href="animals.html?search="+encodeURIComponent(q.value);q.onkeydown=e=>e.key==="Enter"&&go.click()}
 async function explore(){
-let a=await get(),s=document.getElementById("search"),f=document.getElementById("cat"),groups=document.getElementById("exploreGroups");
-let p=new URLSearchParams(location.search);s.value=p.get("search")||"";f.value=p.get("category")||"";
-const catOrder=["Birds","Mammals","Fish","Reptiles","Amphibians","Invertebrates","Other"];
-function keyName(x){return (x.order||"Unspecified order").trim()||"Unspecified order"}
-function orderLabel(items){
- let x=items[0]||{}, sci=x.order||"Unspecified order", common=x.orderCommon||"";
- return common&&common!==sci?`${esc(sci)} — ${esc(common)}`:esc(sci);
-}
-function render(){
- let q=s.value.toLowerCase().trim(), cat=f.value;
- let r=a.filter(x=>
-   (!q||[x.commonName,x.scientificName,x.category,x.order,x.orderCommon,x.family,x.familyCommon,x.genus,x.genusCommon,x.countries,x.habitat,x.status,x.trend,x.threats,x.useTrade,x.conservationActions].join(" ").toLowerCase().includes(q))
-   &&(!cat||x.category===cat)
- );
- document.getElementById("count").textContent=r.length+" species found";
- if(!r.length){groups.innerHTML="<div class=empty>No species match those filters.</div>";return}
- let cats=[...new Set(r.map(x=>x.category||"Other"))].sort((aa,bb)=>{
-   let ia=catOrder.indexOf(aa),ib=catOrder.indexOf(bb);return (ia<0?99:ia)-(ib<0?99:ib)||aa.localeCompare(bb)
- });
- groups.innerHTML=cats.map(category=>{
-   let cr=r.filter(x=>(x.category||"Other")===category);
-   let orderMap=new Map();
-   cr.forEach(x=>{let k=keyName(x);if(!orderMap.has(k))orderMap.set(k,[]);orderMap.get(k).push(x)});
-   let orders=[...orderMap.entries()].sort((aa,bb)=>aa[0].localeCompare(bb[0]));
-   return `<section class="explore-category"><div class="explore-category-head"><h2>${esc(category)}</h2><span>${cr.length} species</span></div><div class="order-groups">${
-     orders.map(([key,items],idx)=>{
-       let open=q? " open":"";
-       return `<details class="order-group"${open}><summary><span class="order-title">${orderLabel(items)}</span><span class="order-count">${items.length} ${items.length===1?"species":"species"}</span></summary><div class="order-species">${items.map(card).join("")}</div></details>`
-     }).join("")
-   }</div></section>`
- }).join("");
-}
-s.oninput=render;f.onchange=render;document.getElementById("clear").onclick=()=>{s.value="";f.value="";render()};render()
+  const all = await get();
+  const searchEl = document.getElementById("search");
+  const catEl = document.getElementById("cat");
+  const groupsEl = document.getElementById("exploreGroups");
+  const countEl = document.getElementById("count");
+  const clearEl = document.getElementById("clear");
+
+  const params = new URLSearchParams(location.search);
+  searchEl.value = params.get("search") || "";
+  catEl.value = params.get("category") || "";
+
+  const categoryOrder = ["Birds","Mammals","Fish","Reptiles","Amphibians","Invertebrates","Other"];
+
+  function orderName(species){
+    const sci = String(species.order || "").trim();
+    const common = String(species.orderCommon || "").trim();
+    if (!sci && !common) return "Unspecified order";
+    if (sci && common && sci.toLowerCase() !== common.toLowerCase()) return sci + " — " + common;
+    return sci || common;
+  }
+
+  function matches(species, query, category){
+    if (category && String(species.category || "Other") !== category) return false;
+    if (!query) return true;
+    const searchable = [
+      species.commonName, species.scientificName, species.category,
+      species.order, species.orderCommon, species.family, species.familyCommon,
+      species.genus, species.genusCommon, species.countries, species.habitat,
+      species.generationLength, species.migratory, species.diet,
+      species.status, species.trend, species.threats,
+      species.useTrade, species.conservationActions, species.facts
+    ].map(v => String(v || "")).join(" ").toLowerCase();
+    return searchable.includes(query);
+  }
+
+  function render(){
+    const query = searchEl.value.trim().toLowerCase();
+    const category = catEl.value;
+    const filtered = all.filter(x => matches(x, query, category));
+
+    countEl.textContent = filtered.length + " species found";
+
+    if (!filtered.length){
+      groupsEl.innerHTML = '<div class="empty">No species match those filters.</div>';
+      return;
+    }
+
+    const categories = [...new Set(filtered.map(x => String(x.category || "Other")))]
+      .sort((a,b) => {
+        const ai = categoryOrder.indexOf(a), bi = categoryOrder.indexOf(b);
+        return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi) || a.localeCompare(b);
+      });
+
+    groupsEl.innerHTML = categories.map(categoryName => {
+      const categorySpecies = filtered.filter(x => String(x.category || "Other") === categoryName);
+      const orderMap = new Map();
+
+      categorySpecies.forEach(species => {
+        const key = orderName(species);
+        if (!orderMap.has(key)) orderMap.set(key, []);
+        orderMap.get(key).push(species);
+      });
+
+      const orders = [...orderMap.entries()].sort((a,b) => a[0].localeCompare(b[0]));
+
+      return '<section class="explore-category">' +
+        '<div class="explore-category-head"><h2>' + esc(categoryName) + '</h2><span>' +
+        categorySpecies.length + ' species</span></div>' +
+        '<div class="order-groups">' +
+        orders.map(([name, species]) =>
+          '<details class="order-group">' +
+          '<summary><span class="order-title">' + esc(name) + '</span>' +
+          '<span class="order-count">' + species.length + ' ' + (species.length === 1 ? 'species' : 'species') + '</span></summary>' +
+          '<div class="order-species">' + species.map(card).join("") + '</div>' +
+          '</details>'
+        ).join("") +
+        '</div></section>';
+    }).join("");
+  }
+
+  searchEl.addEventListener("input", render);
+  catEl.addEventListener("change", render);
+  clearEl.addEventListener("click", () => {
+    searchEl.value = "";
+    catEl.value = "";
+    render();
+  });
+
+  render();
 }
 function tax(label,s,c){return s||c?`<div class=taxrow><span class=taxlabel>${label}</span>${s?`<span class=taxsci>${esc(s)}</span>`:""}${s&&c?" · ":""}${c?`<span class=taxcommon>${esc(c)}</span>`:""}</div>`:""}
 function box(t,v){return v?`<div class=box><h3>${t}</h3><div>${esc(v).replace(/\n/g,"<br>")}</div></div>`:""}

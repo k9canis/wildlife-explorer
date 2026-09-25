@@ -11,7 +11,7 @@
 .order-group[open] summary:before{content:"▾"}
 .order-title{font-size:20px;font-weight:bold}
 .order-count{color:var(--muted);font-size:13px;white-space:nowrap}
-.order-species{padding:0 18px 18px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px;border-top:1px solid var(--line)}
+.order-species{padding:0 18px 18px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;border-top:1px solid var(--line)}
 .order-species .card{margin-top:18px}
 @media(max-width:800px){.order-species{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:520px){.order-species{grid-template-columns:1fr}.order-group summary{align-items:flex-start}.order-title{font-size:18px}}
