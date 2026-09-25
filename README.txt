@@ -1,17 +1,16 @@
-WILDLIFE EXPLORER — UPDATED
+WILDLIFE EXPLORER V4
 
 Includes:
 - Categories: Birds, Mammals, Fish, Reptiles, Amphibians, Invertebrates, Other
 - Order, Family, and Genus, each with scientific and human-readable names
 - Countries, habitat, range map, generational length, migratory status
-- Diet
-- Conservation status, trend, threats, use and trade, conservation actions
+- Identification and diet
+- Conservation status, trend, threats
 - Main photograph and multi-photo gallery
-- Facts
+- Fun facts
 - Edit existing entries
 - Delete accidental entries with confirmation
 - Search and category filtering
-- Explore page organized by category and collapsible taxonomic order groups, so species are not displayed as one giant flat list
 - Naturalist field-guide design
 - Older records using "group" are migrated to "category"
 
