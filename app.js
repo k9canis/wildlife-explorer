@@ -41,6 +41,14 @@ async function explore(){
     return sci || common;
   }
 
+  function scientificGenus(species){
+    const recorded = String(species.genus || "").trim();
+    if (recorded) return recorded;
+    const name = String(species.scientificName || "").trim();
+    const match = name.match(/^([A-Z][a-z]+)\s+[a-z]/);
+    return match ? match[1] : "";
+  }
+
   function matches(species, query, category){
     if (category && String(species.category || "Other") !== category) return false;
     if (!query) return true;
@@ -98,12 +106,23 @@ async function explore(){
           return '<details class="order-group">' +
             '<summary><span class="order-title">' + esc(order.name) + '</span>' +
             '<span class="order-count">' + families.length + ' ' + (families.length === 1 ? 'family' : 'families') + ' · ' + order.count + ' species</span></summary>' +
-            '<div class="family-groups">' + families.map(family =>
-              '<section class="family-group"><div class="family-head"><h3>' + esc(family.name) + '</h3><span>' +
-              family.species.length + ' species</span></div><div class="family-species">' +
-              family.species.sort((a,b) => String(a.commonName || "").localeCompare(String(b.commonName || ""))).map(card).join("") +
-              '</div></section>'
-            ).join("") + '</div></details>';
+            '<div class="family-groups">' + families.map(family => {
+              const genera = new Map();
+              family.species.forEach(species => {
+                const genus = scientificGenus(species);
+                const key = genus.toLocaleLowerCase();
+                if (!genera.has(key)) genera.set(key, {name:genus || "Genus unknown", species:[]});
+                genera.get(key).species.push(species);
+              });
+              return '<section class="family-group"><div class="family-head"><h3>' + esc(family.name) + '</h3><span>' +
+                family.species.length + ' species</span></div>' +
+                [...genera.values()].sort((a,b) => a.name.localeCompare(b.name)).map(genus =>
+                  '<div class="genus-group"><div class="genus-label">Genus <i>' + esc(genus.name) + '</i></div>' +
+                  '<div class="family-species">' +
+                  genus.species.sort((a,b) => String(a.commonName || "").localeCompare(String(b.commonName || ""))).map(card).join("") +
+                  '</div></div>'
+                ).join("") + '</section>';
+            }).join("") + '</div></details>';
         }).join("") +
         '</div></section>';
     }).join("");
