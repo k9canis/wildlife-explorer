@@ -27,8 +27,8 @@
 .genus-label i{color:var(--dark);font-size:15px}
 .genus-common{color:var(--muted);font-size:13px}
 
-/* Show the entire source map at a readable size, including its legend. */
-img.map{display:block;width:min(100%,1000px);height:auto;max-height:none;object-fit:contain;margin:18px auto 0;padding:16px;background:#fff;border:1px solid var(--line);box-shadow:0 3px 12px rgba(29,51,40,.06)}
-@media(max-width:520px){img.map{padding:8px}}
+/* Keep the complete range map large, centered, and comfortable to scan. */
+img.map{display:block;width:min(100%,880px);height:auto;max-height:680px;object-fit:contain;margin:14px auto 0;padding:12px;background:#fff;border:1px solid var(--line);border-radius:4px;box-shadow:0 3px 12px rgba(29,51,40,.06)}
+@media(max-width:520px){img.map{padding:6px;max-height:none}}
 @media(max-width:800px){.family-species{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:520px){.family-species{grid-template-columns:1fr}.order-group summary{flex-wrap:wrap}.order-count{white-space:normal}}
