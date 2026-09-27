@@ -111,13 +111,17 @@ async function explore(){
               family.species.forEach(species => {
                 const genus = scientificGenus(species);
                 const key = genus.toLocaleLowerCase();
-                if (!genera.has(key)) genera.set(key, {name:genus || "Genus unknown", species:[]});
-                genera.get(key).species.push(species);
+                if (!genera.has(key)) genera.set(key, {name:genus || "Genus unknown", common:"", species:[]});
+                const group = genera.get(key);
+                if (!group.common && genus) group.common = String(species.genusCommon || "").trim();
+                group.species.push(species);
               });
               return '<section class="family-group"><div class="family-head"><h3>' + esc(family.name) + '</h3><span>' +
                 family.species.length + ' species</span></div>' +
                 [...genera.values()].sort((a,b) => a.name.localeCompare(b.name)).map(genus =>
-                  '<div class="genus-group"><div class="genus-label">Genus <i>' + esc(genus.name) + '</i></div>' +
+                  '<div class="genus-group"><div class="genus-label">Genus <i>' + esc(genus.name) + '</i>' +
+                  (genus.common && genus.common.toLocaleLowerCase() !== genus.name.toLocaleLowerCase() ?
+                    ' <span class="genus-common">· ' + esc(genus.common) + '</span>' : '') + '</div>' +
                   '<div class="family-species">' +
                   genus.species.sort((a,b) => String(a.commonName || "").localeCompare(String(b.commonName || ""))).map(card).join("") +
                   '</div></div>'
