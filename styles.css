@@ -28,6 +28,8 @@
 .genus-common{color:var(--muted);font-size:13px}
 .brand{display:inline-flex;align-items:center;gap:9px}
 .brand-paw{width:22px;height:22px;fill:currentColor;flex:none}
+.hero{padding:0 0 8px}
+.hero-intro h1{font-size:clamp(38px,5vw,56px);margin:12px 0 20px}
 
 /* Show the entire source map at a readable size, including its legend. */
 img.map{display:block;width:min(100%,1000px);height:auto;max-height:none;object-fit:contain;margin:18px auto 0;padding:16px;background:#fff;border:1px solid var(--line);box-shadow:0 3px 12px rgba(29,51,40,.06)}
