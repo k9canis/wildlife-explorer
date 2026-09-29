@@ -26,6 +26,8 @@
 .genus-label{margin:0 0 10px;padding-left:9px;border-left:2px solid var(--g);color:var(--brown);font-size:13px}
 .genus-label i{color:var(--dark);font-size:15px}
 .genus-common{color:var(--muted);font-size:13px}
+.brand{display:inline-flex;align-items:center;gap:9px}
+.brand-paw{width:22px;height:22px;fill:currentColor;flex:none}
 
 /* Show the entire source map at a readable size, including its legend. */
 img.map{display:block;width:min(100%,1000px);height:auto;max-height:none;object-fit:contain;margin:18px auto 0;padding:16px;background:#fff;border:1px solid var(--line);box-shadow:0 3px 12px rgba(29,51,40,.06)}
