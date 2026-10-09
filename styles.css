@@ -38,3 +38,9 @@ img.map{display:block;width:min(100%,1000px);height:auto;max-height:none;object-
 @media(max-width:520px){.family-species{grid-template-columns:1fr}.order-group summary{flex-wrap:wrap}.order-count{white-space:normal}}
 
 .optional-rank{margin-top:18px}.optional-rank-label{margin:0 0 12px;padding:6px 0;border-bottom:1px solid var(--line);font-size:12px;font-weight:normal;color:var(--brown)}.optional-rank-label span{margin-left:6px;font-size:15px;color:var(--dark)}
+
+/* Suborders introduce the families below them. */
+.family-groups > .optional-rank{margin-top:12px}
+.family-groups > .optional-rank > .optional-rank-label{margin:0 0 18px;padding:10px 0 12px;border-bottom:2px solid var(--g);font-size:15px;color:var(--brown);line-height:1.4}
+.family-groups > .optional-rank > .optional-rank-label span{font-size:22px;font-weight:bold;color:var(--dark);overflow-wrap:anywhere}
+@media(max-width:520px){.family-groups > .optional-rank > .optional-rank-label span{font-size:20px}}
