@@ -168,43 +168,61 @@ function box(t,v){return v?`<div class=box><h3>${t}</h3><div>${esc(v).replace(/\
 async function renderRecord(){let recordEl=document.getElementById("record"),id=new URLSearchParams(location.search).get("id"),a=(await get()).find(x=>x.id===id);if(!a){recordEl.innerHTML="<div class=empty>Species not found.</div>";return}let gal=[...(a.gallery||[])];if(a.photo&&!gal.includes(a.photo))gal.unshift(a.photo);recordEl.innerHTML=`<div class=recordhero><div>${a.photo?`<img class=mainphoto src="${esc(a.photo)}" alt="${esc(a.commonName)}">`:"<div class=empty>No main photograph</div>"}</div><div><span class=tag>${esc(a.category)}</span><h1>${esc(a.commonName)}</h1><div class=sci>${esc(a.scientificName)}</div><div class=tax>${tax("Order",a.order,a.orderCommon)}${tax("Suborder",a.suborder,a.suborderCommon)}${tax("Family",a.family,a.familyCommon)}${tax("Subfamily",a.subfamily,a.subfamilyCommon)}${tax("Tribe",a.tribe,a.tribeCommon)}${tax("Genus",a.genus,a.genusCommon)}</div><a class="btn alt" href="add-animal.html?edit=${encodeURIComponent(a.id)}">Edit species</a></div></div><section class=section><h2>Range & natural history</h2><div class=boxes>${box("Countries",a.countries)}${box("Habitat",a.habitat)}${box("Generational length",a.generationLength)}${box("Migratory",a.migratory)}${box("Diet",a.diet)}</div>${a.rangeMap?`<h2>Range map</h2><img class=map src="${esc(a.rangeMap)}" alt="Range map for ${esc(a.commonName)}">`:""}</section><section class=section><h2>Conservation</h2><div class=boxes>${box("Status",a.status)}${box("Population trend",a.trend)}${box("Threats",a.threats)}${box("Use and trade",a.useTrade)}${box("Conservation actions",a.conservationActions)}</div></section>${a.facts?`<section class=section><h2>Facts</h2><ul>${lines(a.facts).map(x=>`<li>${esc(x)}</li>`).join("")}</ul></section>`:""}${gal.length?`<section class=section><h2>Photo gallery</h2><div class=gallery>${gal.map(x=>`<img src="${esc(x)}" alt="${esc(a.commonName)}">`).join("")}</div></section>`:""}`}
 function showError(message){let el=document.getElementById("formError");el.textContent=message;el.classList.remove("hidden")}
 function installTaxonomyAutofill(formEl, speciesList){
-  const pairs = [
-    {scientific:"scientificName", common:"commonName", parents:[]},
-    {scientific:"order", common:"orderCommon", parents:["category"]},
-    {scientific:"suborder", common:"suborderCommon", parents:["category","order"]},
-    {scientific:"family", common:"familyCommon", parents:["category","order","suborder"]},
-    {scientific:"subfamily", common:"subfamilyCommon", parents:["category","order","family"]},
-    {scientific:"tribe", common:"tribeCommon", parents:["category","order","family","subfamily"]},
-    {scientific:"genus", common:"genusCommon", parents:["category","order","family","subfamily","tribe"]}
-  ];
+  const ranks = ["order", "suborder", "family", "subfamily", "tribe", "genus"];
+  const fields = formEl.elements;
+  const automatic = new Map();
   const key = value => String(value || "").trim().toLocaleLowerCase();
-  const updates = new Map();
-  pairs.forEach(pair => {
-    const scientific = formEl.elements[pair.scientific];
-    const common = formEl.elements[pair.common];
-    let automatic = "";
-    const update = () => {
-      if (common.value.trim() && common.value !== automatic) return;
-      const name = key(scientific.value);
-      const matches = name ? speciesList.filter(species =>
-        key(species[pair.scientific]) === name &&
-        pair.parents.every(parent => !key(formEl.elements[parent].value) ||
-          key(species[parent]) === key(formEl.elements[parent].value))
-      ) : [];
-      const names = [...new Map(matches.map(species => String(species[pair.common] || "").trim())
-        .filter(Boolean).map(value => [key(value), value])).values()];
-      automatic = names.length === 1 ? names[0] : "";
-      common.value = automatic;
-    };
-    scientific.addEventListener("input", update);
-    updates.set(pair.scientific, update);
-  });
-  ["category", ...pairs.slice(1).map(pair => pair.scientific)].forEach(parent => {
-    formEl.elements[parent].addEventListener(parent === "category" ? "change" : "input", () => {
-      pairs.filter(pair => pair.parents.includes(parent)).forEach(pair => updates.get(pair.scientific)());
+  let categoryChosen = new URLSearchParams(location.search).has("edit");
+  const unique = (records, field) => {
+    const values = new Map(records.map(record => String(record[field] || "").trim())
+      .filter(Boolean).map(value => [key(value), value]));
+    return values.size === 1 ? [...values.values()][0] : "";
+  };
+  const canFill = field => !key(fields[field].value) || fields[field].value === automatic.get(field);
+  function assign(field, value){
+    if (!canFill(field)) return;
+    fields[field].value = value;
+    automatic.set(field, value);
+  }
+  function update(source){
+    const index = ranks.indexOf(source);
+    const parents = index < 0 ? [] : ranks.slice(0, index);
+    // Clear only earlier suggestions, keeping anything the editor typed.
+    parents.forEach(rank => {
+      [rank, rank + "Common"].forEach(field => {
+        if (automatic.has(field) && canFill(field)) assign(field, "");
+      });
     });
+    const name = key(fields[source].value);
+    const records = name ? speciesList.filter(record =>
+      key(record[source]) === name &&
+      (!categoryChosen || !key(fields.category.value) || key(record.category) === key(fields.category.value)) &&
+      parents.every(rank => !key(fields[rank].value) || key(record[rank]) === key(fields[rank].value))
+    ) : [];
+    if (records.length && !categoryChosen){
+      const category = unique(records, "category");
+      if (category) fields.category.value = category;
+    }
+    parents.forEach(rank => {
+      const value = unique(records, rank);
+      assign(rank, value);
+      // A common name belongs to the scientific name that was selected.
+      assign(rank + "Common", value ? unique(records.filter(record => key(record[rank]) === key(fields[rank].value)), rank + "Common") : "");
+    });
+    const common = source === "scientificName" ? "commonName" : source + "Common";
+    assign(common, unique(records, common));
+  }
+  ["scientificName", ...ranks].forEach(rank => {
+    fields[rank].addEventListener("input", () => {
+      automatic.delete(rank);
+      update(rank);
+    });
+    const common = rank === "scientificName" ? "commonName" : rank + "Common";
+    fields[common].addEventListener("input", () => automatic.delete(common));
   });
+  fields.category.addEventListener("change", () => { categoryChosen = true; });
 }
+
 async function form(){let formEl=document.getElementById("form"),id=new URLSearchParams(location.search).get("edit"),all=await get(),old=id&&all.find(x=>x.id===id);if(database){let panel=document.getElementById("loginPanel"),status=document.getElementById("editorStatus");async function check(){let {data:{user}}=await database.auth.getUser();panel.classList.toggle("hidden",!!user);formEl.classList.toggle("hidden",!user);status.textContent=user?"Signed in as "+user.email:"Sign in to edit species.";document.getElementById("importPanel").classList.toggle("hidden",!user||!localStorage.getItem(KEY))}document.getElementById("loginButton").onclick=async()=>{let email=document.getElementById("loginEmail").value,password=document.getElementById("loginPassword").value;let {error}=await database.auth.signInWithPassword({email,password});if(error)document.getElementById("loginError").textContent=error.message;else await check()};await check();document.getElementById("importButton").onclick=async()=>{let label=document.getElementById("importStatus");try{let entries=localGet();let {error}=await database.from("species").upsert(entries.map(a=>({id:a.id,data:a})));if(error)throw error;label.textContent=entries.length+" species imported. Refresh Explore to see them."}catch(err){label.textContent="Import failed: "+err.message}}}installTaxonomyAutofill(formEl,all);let keys=["commonName","scientificName","category","order","orderCommon","suborder","suborderCommon","family","familyCommon","subfamily","subfamilyCommon","tribe","tribeCommon","genus","genusCommon","countries","habitat","rangeMap","generationLength","migratory","diet","status","trend","threats","useTrade","conservationActions","photo","facts"];if(old){document.getElementById("title").textContent="Edit species";document.getElementById("save").textContent="Save changes";let deleteBtn=document.getElementById("delete");deleteBtn.classList.remove("hidden");keys.forEach(k=>{if(formEl.elements[k])formEl.elements[k].value=old[k]||""});formEl.elements.gallery.value=(old.gallery||[]).filter(x=>x!==old.photo).join("\n");deleteBtn.onclick=async()=>{if(confirm(`Delete "${old.commonName}"? This cannot be undone.`)){try{await removeOne(id);location.href="animals.html"}catch(err){showError("Could not delete this species. Check that browser storage is available.")}}}}formEl.onsubmit=async e=>{e.preventDefault();let a=Object.fromEntries(new FormData(formEl));a.gallery=lines(a.gallery);if(a.photo&&!a.gallery.includes(a.photo))a.gallery.unshift(a.photo);try{if(old){a.id=old.id;await saveOne(a)}else{let base=(a.commonName||"species").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"species",nid=base,n=2;while(all.some(x=>x.id===nid))nid=base+"-"+n++;a.id=nid;await saveOne(a)}location.href="animal.html?id="+encodeURIComponent(a.id)}catch(err){showError("Could not save this species. Check browser storage and available space, then try again.")}}}
 function showPageError(error){let main=document.querySelector("main");main.insertAdjacentHTML("afterbegin",`<p role="alert">Could not load species: ${esc(error.message)}</p>`)}
 document.addEventListener("DOMContentLoaded",()=>{if(document.getElementById("cats"))home().catch(showPageError);if(document.getElementById("exploreGroups"))explore().catch(showPageError);if(document.getElementById("record"))renderRecord().catch(showPageError);if(document.getElementById("form"))form().catch(showPageError)})
