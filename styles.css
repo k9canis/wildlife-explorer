@@ -46,3 +46,5 @@ img.map{display:block;width:min(100%,1000px);height:auto;max-height:none;object-
 @media(max-width:520px){.family-groups > .optional-rank-suborder > .optional-rank-label span{font-size:20px}}
 
 .optional-rank-superfamily > .optional-rank-label{font-size:13px;margin-bottom:14px}.optional-rank-superfamily > .optional-rank-label span{font-size:18px}
+
+.topic-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:20px}.topic-gallery a{display:block;background:var(--cream);border:1px solid var(--line)}.topic-gallery img{display:block;width:100%;height:280px;object-fit:contain}.topic-videos{display:flex;flex-wrap:wrap;gap:12px;margin-top:18px}.topic-videos a{overflow-wrap:anywhere;max-width:100%}.boxes .box{overflow-wrap:anywhere}@media(max-width:520px){.topic-gallery{grid-template-columns:1fr}.topic-gallery img{height:auto;max-height:360px}}
