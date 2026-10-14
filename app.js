@@ -170,29 +170,103 @@ function safeMediaUrl(value){
   try { const url = new URL(String(value).trim()); return ["https:", "http:"].includes(url.protocol) ? url.href : ""; }
   catch { return ""; }
 }
-function sectionMedia(photos, videos, speciesName, topic){
-  const photoUrls = lines(photos).map(safeMediaUrl).filter(Boolean);
-  const videoLinks = lines(videos).map(line => {
-    const split = line.indexOf("|");
-    const title = split < 0 ? "" : line.slice(0, split).trim();
-    const url = safeMediaUrl(split < 0 ? line : line.slice(split + 1));
-    return url ? {title, url} : null;
+const recordMedia = [];
+function mediaEntries(value, type, fallback){
+  const entries = Array.isArray(value) ? value : lines(value);
+  return entries.map((line,index) => {
+    const split = String(line).indexOf("|");
+    const title = split < 0 ? "" : String(line).slice(0,split).trim();
+    const url = safeMediaUrl(split < 0 ? line : String(line).slice(split+1));
+    return url ? {type,url,title:title || fallback + " " + (index+1)} : null;
   }).filter(Boolean);
-  return (photoUrls.length ? `<div class="topic-gallery">${photoUrls.map(url =>
-    `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer"><img loading="lazy" src="${esc(url)}" alt="${esc(topic)} photo of ${esc(speciesName)}"></a>`
-  ).join("")}</div>` : "") + (videoLinks.length ? `<div class="topic-videos">${videoLinks.map((video,index) =>
-    `<a class="btn alt" href="${esc(video.url)}" target="_blank" rel="noopener noreferrer">${esc(video.title || "Watch " + topic.toLowerCase() + " video" + (videoLinks.length > 1 ? " " + (index + 1) : ""))} ↗</a>`
-  ).join("")}</div>` : "");
+}
+function mediaCard(item, className=""){
+  const index = recordMedia.push(item)-1;
+  return `<button type="button" class="media-card ${className}" data-media-index="${index}" aria-label="Enlarge ${esc(item.title)}">${item.type === "photo" ? `<img loading="lazy" src="${esc(item.url)}" alt="${esc(item.title)}">` : '<span class="video-preview">▶ Watch video</span>'}<span class="media-headline">${esc(item.title)}</span></button>`;
+}
+function sectionMedia(photos, videos, speciesName, topic){
+  const items = [...mediaEntries(photos,"photo",topic + " photo"), ...mediaEntries(videos,"video",topic + " video")];
+  return items.length ? `<div class="topic-gallery">${items.map(item=>mediaCard(item)).join("")}</div>` : "";
+}
+function videoEmbed(url){
+  const parsed = new URL(url), host = parsed.hostname.toLowerCase().replace(/^www\./, "");
+  let id;
+  if (["youtube.com","m.youtube.com","youtube-nocookie.com"].includes(host))
+    id = parsed.searchParams.get("v") || parsed.pathname.match(/^\/(?:embed|shorts|live)\/([^/]+)/)?.[1];
+  if (host === "youtu.be") id = parsed.pathname.slice(1).split("/")[0];
+  if (id && /^[A-Za-z0-9_-]{11}$/.test(id)) return "https://www.youtube.com/embed/" + id;
+  if (host === "tiktok.com" || host.endsWith(".tiktok.com")) {
+    id = parsed.pathname.match(/\/video\/(\d+)/)?.[1];
+    if (id) return "https://www.tiktok.com/player/v1/" + id;
+  }
+  return "";
+}
+function installMediaViewer(recordEl){
+  document.getElementById("mediaViewer")?.remove();
+  const dialog = document.createElement("dialog");
+  dialog.id = "mediaViewer";
+  dialog.className = "media-viewer";
+  dialog.setAttribute("aria-labelledby","mediaViewerTitle");
+  dialog.innerHTML = `<div class="viewer-header"><h2 id="mediaViewerTitle"></h2><button type="button" class="btn alt" data-close>Close ×</button></div><div class="viewer-stage"></div><div class="viewer-nav"><button type="button" class="btn alt" data-prev>← Previous</button><span class="viewer-count" aria-live="polite"></span><button type="button" class="btn alt" data-next>Next →</button></div><a class="viewer-source" target="_blank" rel="noopener noreferrer">Open original ↗</a>`;
+  document.body.append(dialog);
+  const stage = dialog.querySelector(".viewer-stage");
+  const title = dialog.querySelector("h2");
+  const previous = dialog.querySelector("[data-prev]");
+  const next = dialog.querySelector("[data-next]");
+  const source = dialog.querySelector(".viewer-source");
+  let index = 0, returnFocus;
+  function show(position){
+    index = position;
+    const item = recordMedia[index];
+    title.textContent = item.title;
+    source.href = item.url;
+    stage.replaceChildren();
+    let content;
+    if (item.type === "photo") {
+      content = document.createElement("img"); content.src = item.url; content.alt = item.title;
+    } else {
+      const embed = videoEmbed(item.url);
+      if (embed) {
+        content = document.createElement("iframe"); content.src = embed; content.title = item.title;
+        content.allow = "fullscreen; picture-in-picture; encrypted-media"; content.allowFullscreen = true;
+      } else if (/\.(mp4|webm|ogv|mov)$/i.test(new URL(item.url).pathname)) {
+        content = document.createElement("video"); content.src = item.url; content.controls = true; content.playsInline = true;
+      } else {
+        content = document.createElement("p"); content.textContent = "Watch this video using the Open original link below.";
+      }
+    }
+    stage.append(content);
+    dialog.querySelector(".viewer-count").textContent = (index+1) + " / " + recordMedia.length;
+    previous.disabled = index === 0;
+    next.disabled = index === recordMedia.length-1;
+  }
+  recordEl.addEventListener("click", event => {
+    const trigger = event.target.closest("[data-media-index]");
+    if (!trigger) return;
+    returnFocus = trigger;
+    show(Number(trigger.dataset.mediaIndex));
+    dialog.showModal();
+  });
+  previous.onclick = () => { if(index > 0) show(index-1); };
+  next.onclick = () => { if(index < recordMedia.length-1) show(index+1); };
+  dialog.querySelector("[data-close]").onclick = () => dialog.close();
+  dialog.addEventListener("close", () => { stage.replaceChildren(); returnFocus?.focus(); });
+  dialog.addEventListener("click", event => { if(event.target === dialog){const rect=dialog.getBoundingClientRect();if(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom)dialog.close();} });
+  dialog.addEventListener("keydown", event => {
+    if (["VIDEO","IFRAME"].includes(event.target.tagName)) return;
+    if(event.key === "ArrowLeft" && index > 0){event.preventDefault();show(index-1);}
+    if(event.key === "ArrowRight" && index < recordMedia.length-1){event.preventDefault();show(index+1);}
+  });
 }
 function optionalSection(title, boxes, media=""){
   return boxes || media ? `<section class="section"><h2>${esc(title)}</h2>${boxes ? `<div class="boxes">${boxes}</div>` : ""}${media}</section>` : "";
 }
-async function renderRecord(){let recordEl=document.getElementById("record"),id=new URLSearchParams(location.search).get("id"),a=(await get()).find(x=>x.id===id);if(!a){recordEl.innerHTML="<div class=empty>Species not found.</div>";return}let gal=[...(a.gallery||[])];if(a.photo&&!gal.includes(a.photo))gal.unshift(a.photo);recordEl.innerHTML=`<div class=recordhero><div>${a.photo?`<img class=mainphoto src="${esc(a.photo)}" alt="${esc(a.commonName)}">`:"<div class=empty>No main photograph</div>"}</div><div><span class=tag>${esc(a.category)}</span><h1>${esc(a.commonName)}</h1><div class=sci>${esc(a.scientificName)}</div><div class=tax>${tax("Order",a.order,a.orderCommon)}${tax("Suborder",a.suborder,a.suborderCommon)}${tax("Superfamily",a.superfamily,a.superfamilyCommon)}${tax("Family",a.family,a.familyCommon)}${tax("Subfamily",a.subfamily,a.subfamilyCommon)}${tax("Tribe",a.tribe,a.tribeCommon)}${tax("Genus",a.genus,a.genusCommon)}</div><a class="btn alt" href="add-animal.html?edit=${encodeURIComponent(a.id)}">Edit species</a></div></div>${optionalSection("Range & habitat",
+async function renderRecord(){let recordEl=document.getElementById("record"),id=new URLSearchParams(location.search).get("id"),a=(await get()).find(x=>x.id===id);if(!a){recordEl.innerHTML="<div class=empty>Species not found.</div>";return}recordMedia.length=0;let gal=[...(a.gallery||[])];if(a.photo&&!gal.includes(a.photo))gal.unshift(a.photo);recordEl.innerHTML=`<div class=recordhero><div>${a.photo?`${mediaCard({type:"photo",url:a.photo,title:a.photoHeadline || a.commonName},"main-media")}`:"<div class=empty>No main photograph</div>"}</div><div><span class=tag>${esc(a.category)}</span><h1>${esc(a.commonName)}</h1><div class=sci>${esc(a.scientificName)}</div><div class=tax>${tax("Order",a.order,a.orderCommon)}${tax("Suborder",a.suborder,a.suborderCommon)}${tax("Superfamily",a.superfamily,a.superfamilyCommon)}${tax("Family",a.family,a.familyCommon)}${tax("Subfamily",a.subfamily,a.subfamilyCommon)}${tax("Tribe",a.tribe,a.tribeCommon)}${tax("Genus",a.genus,a.genusCommon)}</div><a class="btn alt" href="add-animal.html?edit=${encodeURIComponent(a.id)}">Edit species</a></div></div>${optionalSection("Range & habitat",
 box("Countries",a.countries)+box("System",a.system)+box("Habitat",a.habitat)+box("Biomes",a.biomes)+box("Climate zones",a.climateZones)+box("Generational length",a.generationLength)+box("Migratory",a.migratory),
 a.rangeMap?`<h2>Range map</h2><img class=map src="${esc(a.rangeMap)}" alt="Range map for ${esc(a.commonName)}">`:"")}
 ${optionalSection("Feeding",box("Diet",a.diet)+box("Feeding habits",a.feedingHabits),sectionMedia(a.feedingPhotos,a.feedingVideos,a.commonName,"Feeding"))}
 ${optionalSection("Reproduction",box("Courtship & mating",a.courtship)+box("Breeding & offspring",a.breeding),sectionMedia(a.matingPhotos,a.matingVideos,a.commonName,"Reproduction"))}
-${optionalSection("Conservation",box("Status",a.status)+box("Population trend",a.trend)+box("Threats",a.threats)+box("Use and trade",a.useTrade)+box("Conservation actions",a.conservationActions))}${a.facts?`<section class=section><h2>Facts</h2><ul>${lines(a.facts).map(x=>`<li>${esc(x)}</li>`).join("")}</ul></section>`:""}${gal.length?`<section class=section><h2>Photo gallery</h2><div class=gallery>${gal.map(x=>`<img src="${esc(x)}" alt="${esc(a.commonName)}">`).join("")}</div></section>`:""}`}
+${optionalSection("Conservation",box("Status",a.status)+box("Population trend",a.trend)+box("Threats",a.threats)+box("Use and trade",a.useTrade)+box("Conservation actions",a.conservationActions))}${a.facts?`<section class=section><h2>Facts</h2><ul>${lines(a.facts).map(x=>`<li>${esc(x)}</li>`).join("")}</ul></section>`:""}${gal.length?`<section class=section><h2>Photo gallery</h2><div class=gallery>${mediaEntries(gal,"photo",a.commonName + " photo").map(item=>mediaCard(item)).join("")}</div></section>`:""}`;installMediaViewer(recordEl)}
 function showError(message){let el=document.getElementById("formError");el.textContent=message;el.classList.remove("hidden")}
 function installTaxonomyAutofill(formEl, speciesList){
   const ranks = ["order", "suborder", "superfamily", "family", "subfamily", "tribe", "genus"];
@@ -250,6 +324,6 @@ function installTaxonomyAutofill(formEl, speciesList){
   fields.category.addEventListener("change", () => { categoryChosen = true; });
 }
 
-async function form(){let formEl=document.getElementById("form"),id=new URLSearchParams(location.search).get("edit"),all=await get(),old=id&&all.find(x=>x.id===id);if(database){let panel=document.getElementById("loginPanel"),status=document.getElementById("editorStatus");async function check(){let {data:{user}}=await database.auth.getUser();panel.classList.toggle("hidden",!!user);formEl.classList.toggle("hidden",!user);status.textContent=user?"Signed in as "+user.email:"Sign in to edit species.";document.getElementById("importPanel").classList.toggle("hidden",!user||!localStorage.getItem(KEY))}document.getElementById("loginButton").onclick=async()=>{let email=document.getElementById("loginEmail").value,password=document.getElementById("loginPassword").value;let {error}=await database.auth.signInWithPassword({email,password});if(error)document.getElementById("loginError").textContent=error.message;else await check()};await check();document.getElementById("importButton").onclick=async()=>{let label=document.getElementById("importStatus");try{let entries=localGet();let {error}=await database.from("species").upsert(entries.map(a=>({id:a.id,data:a})));if(error)throw error;label.textContent=entries.length+" species imported. Refresh Explore to see them."}catch(err){label.textContent="Import failed: "+err.message}}}installTaxonomyAutofill(formEl,all);let keys=["commonName","scientificName","category","order","orderCommon","suborder","suborderCommon","superfamily","superfamilyCommon","family","familyCommon","subfamily","subfamilyCommon","tribe","tribeCommon","genus","genusCommon","countries","habitat","system","biomes","climateZones","feedingHabits","feedingPhotos","feedingVideos","courtship","breeding","matingPhotos","matingVideos","rangeMap","generationLength","migratory","diet","status","trend","threats","useTrade","conservationActions","photo","facts"];if(old){document.getElementById("title").textContent="Edit species";document.getElementById("save").textContent="Save changes";let deleteBtn=document.getElementById("delete");deleteBtn.classList.remove("hidden");keys.forEach(k=>{if(formEl.elements[k])formEl.elements[k].value=old[k]||""});formEl.elements.gallery.value=(old.gallery||[]).filter(x=>x!==old.photo).join("\n");deleteBtn.onclick=async()=>{if(confirm(`Delete "${old.commonName}"? This cannot be undone.`)){try{await removeOne(id);location.href="animals.html"}catch(err){showError("Could not delete this species. Check that browser storage is available.")}}}}formEl.onsubmit=async e=>{e.preventDefault();let a=Object.fromEntries(new FormData(formEl));a.gallery=lines(a.gallery);if(a.photo&&!a.gallery.includes(a.photo))a.gallery.unshift(a.photo);try{if(old){a.id=old.id;await saveOne(a)}else{let base=(a.commonName||"species").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"species",nid=base,n=2;while(all.some(x=>x.id===nid))nid=base+"-"+n++;a.id=nid;await saveOne(a)}location.href="animal.html?id="+encodeURIComponent(a.id)}catch(err){showError("Could not save this species. Check browser storage and available space, then try again.")}}}
+async function form(){let formEl=document.getElementById("form"),id=new URLSearchParams(location.search).get("edit"),all=await get(),old=id&&all.find(x=>x.id===id);if(database){let panel=document.getElementById("loginPanel"),status=document.getElementById("editorStatus");async function check(){let {data:{user}}=await database.auth.getUser();panel.classList.toggle("hidden",!!user);formEl.classList.toggle("hidden",!user);status.textContent=user?"Signed in as "+user.email:"Sign in to edit species.";document.getElementById("importPanel").classList.toggle("hidden",!user||!localStorage.getItem(KEY))}document.getElementById("loginButton").onclick=async()=>{let email=document.getElementById("loginEmail").value,password=document.getElementById("loginPassword").value;let {error}=await database.auth.signInWithPassword({email,password});if(error)document.getElementById("loginError").textContent=error.message;else await check()};await check();document.getElementById("importButton").onclick=async()=>{let label=document.getElementById("importStatus");try{let entries=localGet();let {error}=await database.from("species").upsert(entries.map(a=>({id:a.id,data:a})));if(error)throw error;label.textContent=entries.length+" species imported. Refresh Explore to see them."}catch(err){label.textContent="Import failed: "+err.message}}}installTaxonomyAutofill(formEl,all);let keys=["commonName","scientificName","category","order","orderCommon","suborder","suborderCommon","superfamily","superfamilyCommon","family","familyCommon","subfamily","subfamilyCommon","tribe","tribeCommon","genus","genusCommon","countries","habitat","system","biomes","climateZones","feedingHabits","feedingPhotos","feedingVideos","courtship","breeding","matingPhotos","matingVideos","rangeMap","generationLength","migratory","diet","status","trend","threats","useTrade","conservationActions","photo","photoHeadline","facts"];if(old){document.getElementById("title").textContent="Edit species";document.getElementById("save").textContent="Save changes";let deleteBtn=document.getElementById("delete");deleteBtn.classList.remove("hidden");keys.forEach(k=>{if(formEl.elements[k])formEl.elements[k].value=old[k]||""});formEl.elements.gallery.value=(old.gallery||[]).filter(x=>x!==old.photo).join("\n");deleteBtn.onclick=async()=>{if(confirm(`Delete "${old.commonName}"? This cannot be undone.`)){try{await removeOne(id);location.href="animals.html"}catch(err){showError("Could not delete this species. Check that browser storage is available.")}}}}formEl.onsubmit=async e=>{e.preventDefault();let a=Object.fromEntries(new FormData(formEl));a.gallery=lines(a.gallery);if(a.photo&&!a.gallery.includes(a.photo))a.gallery.unshift(a.photo);try{if(old){a.id=old.id;await saveOne(a)}else{let base=(a.commonName||"species").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"species",nid=base,n=2;while(all.some(x=>x.id===nid))nid=base+"-"+n++;a.id=nid;await saveOne(a)}location.href="animal.html?id="+encodeURIComponent(a.id)}catch(err){showError("Could not save this species. Check browser storage and available space, then try again.")}}}
 function showPageError(error){let main=document.querySelector("main");main.insertAdjacentHTML("afterbegin",`<p role="alert">Could not load species: ${esc(error.message)}</p>`)}
 document.addEventListener("DOMContentLoaded",()=>{if(document.getElementById("cats"))home().catch(showPageError);if(document.getElementById("exploreGroups"))explore().catch(showPageError);if(document.getElementById("record"))renderRecord().catch(showPageError);if(document.getElementById("form"))form().catch(showPageError)})
