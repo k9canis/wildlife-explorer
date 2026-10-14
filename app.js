@@ -166,6 +166,23 @@ async function explore(){
 }
 function tax(label,s,c){return s||c?`<div class=taxrow><span class=taxlabel>${label}</span>${s?`<span class=taxsci>${esc(s)}</span>`:""}${s&&c?" · ":""}${c?`<span class=taxcommon>${esc(c)}</span>`:""}</div>`:""}
 function box(t,v){return String(v || "").trim()?`<div class=box><h3>${t}</h3><div>${esc(v).replace(/\n/g,"<br>")}</div></div>`:""}
+function threatsBox(value){
+  const text = String(value || "").trim();
+  if (!text) return "";
+  // Preserve existing plain-text entries; a leading dash or bullet enables grouping.
+  if (!/^\s*[-•]\s+/m.test(text)) return box("Threats", text);
+  const groups = [];
+  lines(text).forEach(line => {
+    const detail = line.match(/^[-•]\s+(.+)$/);
+    if (detail) {
+      if (!groups.length) groups.push({title:"", details:[]});
+      groups[groups.length-1].details.push(detail[1]);
+    } else groups.push({title:line, details:[]});
+  });
+  return `<div class="box threats-box"><h3>Threats</h3>${groups.map(group =>
+    `<div class="threat-group">${group.title ? `<p class="threat-title">${esc(group.title)}</p>` : ""}${group.details.length ? `<ul class="threat-details">${group.details.map(detail=>`<li>${esc(detail)}</li>`).join("")}</ul>` : ""}</div>`
+  ).join("")}</div>`;
+}
 function safeMediaUrl(value){
   try { const url = new URL(String(value).trim()); return ["https:", "http:"].includes(url.protocol) ? url.href : ""; }
   catch { return ""; }
@@ -270,7 +287,7 @@ ${optionalSection("Social behavior",box("Sociality",a.sociality)+box("Social beh
 ${optionalSection("Feeding",box("Diet",a.diet)+box("Feeding habits",a.feedingHabits),sectionMedia(a.feedingPhotos,a.feedingVideos,a.commonName,"Feeding"))}
 ${optionalSection("Reproduction",box("Mating rituals",a.courtship),sectionMedia(a.matingPhotos,a.matingVideos,a.commonName,"Reproduction"))}
 ${optionalSection("Offspring",box("Number of offspring",a.offspringCount)+box("Breeding frequency",a.breedingFrequency)+box("Breeding & parental care",a.breeding)+box("Offspring notes",a.offspringNotes)+box("Generational length",a.generationLength))}
-${optionalSection("Conservation",box("Status",a.status)+box("Population trend",a.trend)+box("Threats",a.threats)+box("Use and trade",a.useTrade)+box("Conservation actions",a.conservationActions))}${a.facts?`<section class=section><h2>Facts</h2><ul>${lines(a.facts).map(x=>`<li>${esc(x)}</li>`).join("")}</ul></section>`:""}${gal.length?`<section class=section><h2>Photo gallery</h2><div class=gallery>${mediaEntries(gal,"photo",a.commonName + " photo").map(item=>mediaCard(item)).join("")}</div></section>`:""}`;installMediaViewer(recordEl)}
+${optionalSection("Conservation",box("Status",a.status)+box("Population trend",a.trend)+threatsBox(a.threats)+box("Use and trade",a.useTrade)+box("Conservation actions",a.conservationActions))}${a.facts?`<section class=section><h2>Facts</h2><ul>${lines(a.facts).map(x=>`<li>${esc(x)}</li>`).join("")}</ul></section>`:""}${gal.length?`<section class=section><h2>Photo gallery</h2><div class=gallery>${mediaEntries(gal,"photo",a.commonName + " photo").map(item=>mediaCard(item)).join("")}</div></section>`:""}`;installMediaViewer(recordEl)}
 function showError(message){let el=document.getElementById("formError");el.textContent=message;el.classList.remove("hidden")}
 function installTaxonomyAutofill(formEl, speciesList){
   const ranks = ["order", "suborder", "superfamily", "family", "subfamily", "tribe", "genus"];
