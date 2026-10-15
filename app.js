@@ -285,12 +285,43 @@ function installMediaViewer(recordEl){
 function optionalSection(title, boxes, media=""){
   return boxes || media ? `<section class="section"><h2>${esc(title)}</h2>${boxes ? `<div class="boxes">${boxes}</div>` : ""}${media}</section>` : "";
 }
+function speciesBrowseOrder(all){
+  const categories = ["Birds","Mammals","Fish","Reptiles","Amphibians","Invertebrates","Other"];
+  const ranks = ["order","suborder","superfamily","family","subfamily","tribe","genus"];
+  const optional = new Set(["suborder","superfamily","subfamily","tribe"]);
+  function names(species, rank){
+    if (rank === "genus") {
+      const genus = String(species.genus || "").trim() || String(species.scientificName || "").trim().match(/^([A-Z][a-z]+)\s+[a-z]/)?.[1] || "";
+      return {key:genus.toLocaleLowerCase(),name:genus || "Genus unknown"};
+    }
+    const sci = String(species[rank] || "").trim(), common = String(species[rank+"Common"] || "").trim();
+    return {key:String(species[rank] || species[rank+"Common"] || "unspecified").trim().toLocaleLowerCase(),
+      name:sci && common && sci.toLocaleLowerCase() !== common.toLocaleLowerCase() ? sci + " — " + common : sci || common || "Unspecified " + rank};
+  }
+  function visit(list, depth){
+    if (depth === ranks.length) return list.slice().sort((a,b)=>String(a.commonName || "").localeCompare(String(b.commonName || "")));
+    const rank = ranks[depth], groups = new Map(), direct = [];
+    list.forEach(species => {
+      if (optional.has(rank) && !String(species[rank] || species[rank+"Common"] || "").trim()) {direct.push(species);return;}
+      const {key,name} = names(species,rank);
+      if (!groups.has(key)) groups.set(key,{name,species:[]});
+      groups.get(key).species.push(species);
+    });
+    return [...(direct.length ? visit(direct,depth+1) : []), ...[...groups.values()].sort((a,b)=>a.name.localeCompare(b.name)).flatMap(group=>visit(group.species,depth+1))];
+  }
+  const groups = new Map();
+  all.forEach(species=>{const category=String(species.category || "Other");if(!groups.has(category))groups.set(category,[]);groups.get(category).push(species);});
+  return [...groups.keys()].sort((a,b)=>{
+    const ai=categories.indexOf(a),bi=categories.indexOf(b);
+    return (ai<0?99:ai)-(bi<0?99:bi)||a.localeCompare(b);
+  }).flatMap(category=>visit(groups.get(category),0));
+}
 function animalNavigation(all, currentId){
-  const sorted = all.slice().sort((a,b) => String(a.commonName || "").localeCompare(String(b.commonName || "")) || String(a.id).localeCompare(String(b.id)));
+  const sorted = speciesBrowseOrder(all);
   const index = sorted.findIndex(species => species.id === currentId);
   if (index < 0 || sorted.length < 2) return "";
   const link = (species, label) => species ? `<a class="btn alt animal-step" href="animal.html?id=${encodeURIComponent(species.id)}"><span>${label}</span><small>${esc(species.commonName)}</small></a>` : `<span class="animal-step-placeholder"></span>`;
-  return `<nav class="animal-navigation" aria-label="Browse species">${link(sorted[index-1],"← Previous animal")}<span class="animal-position">${index+1} of ${sorted.length}</span>${link(sorted[index+1],"Next animal →")}</nav>`;
+  return `<nav class="animal-navigation" aria-label="Browse species">${link(sorted[index-1],"← Previous")}<span class="animal-position">${index+1} of ${sorted.length}</span>${link(sorted[index+1],"Next →")}</nav>`;
 }
 async function renderRecord(){let recordEl=document.getElementById("record"),id=new URLSearchParams(location.search).get("id"),all=await get(),a=all.find(x=>x.id===id);if(!a){recordEl.innerHTML="<div class=empty>Species not found.</div>";return}recordMedia.length=0;let gal=[...(a.gallery||[])];if(a.photo&&!gal.includes(a.photo))gal.unshift(a.photo);recordEl.innerHTML=`${animalNavigation(all,id)}<div class=recordhero><div>${a.photo?`${mediaCard({type:"photo",url:a.photo,title:a.photoHeadline || a.commonName},"main-media")}`:"<div class=empty>No main photograph</div>"}</div><div><span class=tag>${esc(a.category)}</span><h1>${esc(a.commonName)}</h1><div class=sci>${esc(a.scientificName)}</div><div class=tax>${tax("Order",a.order,a.orderCommon)}${tax("Suborder",a.suborder,a.suborderCommon)}${tax("Superfamily",a.superfamily,a.superfamilyCommon)}${tax("Family",a.family,a.familyCommon)}${tax("Subfamily",a.subfamily,a.subfamilyCommon)}${tax("Tribe",a.tribe,a.tribeCommon)}${tax("Genus",a.genus,a.genusCommon)}</div><a class="btn alt" href="add-animal.html?edit=${encodeURIComponent(a.id)}">Edit species</a></div></div>${optionalSection("Where they live",
 box("Countries",a.countries)+box("System",a.system)+box("Habitat",a.habitat)+box("Biomes",a.biomes)+box("Climate zones",a.climateZones)+box("Migratory",a.migratory)+box("Living spaces",a.livingDetails),
