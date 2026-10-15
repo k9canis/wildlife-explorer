@@ -57,7 +57,7 @@ async function explore(){
       species.order, species.orderCommon, species.suborder, species.suborderCommon, species.superfamily, species.superfamilyCommon, species.family, species.familyCommon,
       species.subfamily, species.subfamilyCommon, species.tribe, species.tribeCommon,
       species.genus, species.genusCommon, species.countries, species.habitat,
-      species.system, species.biomes, species.climateZones, species.lifespan, species.length, species.weight, species.sociality, species.socialNotes, species.livingDetails, species.offspringCount, species.breedingFrequency, species.offspringNotes, species.feedingHabits, species.courtship, species.breeding,
+      species.system, species.biomes, species.climateZones, species.lifespan, species.length, species.weight, species.sociality, species.socialNotes, species.livingDetails, species.offspringCount, species.breedingFrequency,
       species.generationLength, species.migratory, species.diet,
       species.status, species.trend, species.threats,
       species.useTrade, species.conservationActions, species.facts
@@ -284,10 +284,9 @@ sectionMedia(a.livingPhotos,"",a.commonName,"Habitat") +
 (a.rangeMap?`<h2>Range map</h2><img class=map src="${esc(a.rangeMap)}" alt="Range map for ${esc(a.commonName)}">`:""))}
 ${optionalSection("Size & lifespan",box("Length",a.length)+box("Weight",a.weight)+box("Lifespan",a.lifespan))}
 ${optionalSection("Social behavior",box("Sociality",a.sociality)+box("Social behavior",a.socialNotes))}
-${optionalSection("Feeding",box("Diet",a.diet)+box("Feeding habits",a.feedingHabits),sectionMedia(a.feedingPhotos,a.feedingVideos,a.commonName,"Feeding"))}
-${optionalSection("Reproduction",box("Mating rituals",a.courtship),sectionMedia(a.matingPhotos,a.matingVideos,a.commonName,"Reproduction"))}
-${optionalSection("Offspring",box("Number of offspring",a.offspringCount)+box("Breeding frequency",a.breedingFrequency)+box("Breeding & parental care",a.breeding)+box("Offspring notes",a.offspringNotes)+box("Generational length",a.generationLength))}
-${optionalSection("Conservation",box("Status",a.status)+box("Population trend",a.trend)+threatsBox(a.threats)+box("Use and trade",a.useTrade)+box("Conservation actions",a.conservationActions))}${a.facts?`<section class=section><h2>Facts</h2><ul>${lines(a.facts).map(x=>`<li>${esc(x)}</li>`).join("")}</ul></section>`:""}${gal.length?`<section class=section><h2>Photo gallery</h2><div class=gallery>${mediaEntries(gal,"photo",a.commonName + " photo").map(item=>mediaCard(item)).join("")}</div></section>`:""}`;installMediaViewer(recordEl)}
+${optionalSection("Feeding",box("Diet",a.diet),sectionMedia(a.feedingPhotos,a.feedingVideos,a.commonName,"Feeding"))}
+${optionalSection("Offspring",box("Number of offspring",a.offspringCount)+box("Breeding frequency",a.breedingFrequency)+box("Generational length",a.generationLength))}
+${optionalSection("Conservation",box("Status",a.status)+box("Population trend",a.trend)+threatsBox(a.threats)+box("Use and trade",a.useTrade)+box("Conservation actions",a.conservationActions))}${a.facts?`<section class=section><h2>Facts</h2><ul>${lines(a.facts).map(x=>`<li>${esc(x)}</li>`).join("")}</ul></section>`:""}${gal.length?`<section class=section><h2>Photo gallery</h2><div class=gallery>${mediaEntries(gal,"photo",a.commonName + " photo").map(item=>mediaCard(item.url === safeMediaUrl(a.photo) ? {...item,title:a.photoHeadline || a.commonName} : item)).join("")}</div></section>`:""}`;installMediaViewer(recordEl)}
 function showError(message){let el=document.getElementById("formError");el.textContent=message;el.classList.remove("hidden")}
 function installTaxonomyAutofill(formEl, speciesList){
   const ranks = ["order", "suborder", "superfamily", "family", "subfamily", "tribe", "genus"];
@@ -345,6 +344,51 @@ function installTaxonomyAutofill(formEl, speciesList){
   fields.category.addEventListener("change", () => { categoryChosen = true; });
 }
 
-async function form(){let formEl=document.getElementById("form"),id=new URLSearchParams(location.search).get("edit"),all=await get(),old=id&&all.find(x=>x.id===id);if(database){let panel=document.getElementById("loginPanel"),status=document.getElementById("editorStatus");async function check(){let {data:{user}}=await database.auth.getUser();panel.classList.toggle("hidden",!!user);formEl.classList.toggle("hidden",!user);status.textContent=user?"Signed in as "+user.email:"Sign in to edit species.";document.getElementById("importPanel").classList.toggle("hidden",!user||!localStorage.getItem(KEY))}document.getElementById("loginButton").onclick=async()=>{let email=document.getElementById("loginEmail").value,password=document.getElementById("loginPassword").value;let {error}=await database.auth.signInWithPassword({email,password});if(error)document.getElementById("loginError").textContent=error.message;else await check()};await check();document.getElementById("importButton").onclick=async()=>{let label=document.getElementById("importStatus");try{let entries=localGet();let {error}=await database.from("species").upsert(entries.map(a=>({id:a.id,data:a})));if(error)throw error;label.textContent=entries.length+" species imported. Refresh Explore to see them."}catch(err){label.textContent="Import failed: "+err.message}}}installTaxonomyAutofill(formEl,all);let keys=["commonName","scientificName","category","order","orderCommon","suborder","suborderCommon","superfamily","superfamilyCommon","family","familyCommon","subfamily","subfamilyCommon","tribe","tribeCommon","genus","genusCommon","countries","habitat","system","biomes","climateZones","lifespan","length","weight","sociality","socialNotes","livingDetails","livingPhotos","offspringCount","breedingFrequency","offspringNotes","feedingHabits","feedingPhotos","feedingVideos","courtship","breeding","matingPhotos","matingVideos","rangeMap","generationLength","migratory","diet","status","trend","threats","useTrade","conservationActions","photo","photoHeadline","facts"];if(old){document.getElementById("title").textContent="Edit species";document.getElementById("save").textContent="Save changes";let deleteBtn=document.getElementById("delete");deleteBtn.classList.remove("hidden");keys.forEach(k=>{if(formEl.elements[k])formEl.elements[k].value=old[k]||""});formEl.elements.gallery.value=(old.gallery||[]).filter(x=>x!==old.photo).join("\n");deleteBtn.onclick=async()=>{if(confirm(`Delete "${old.commonName}"? This cannot be undone.`)){try{await removeOne(id);location.href="animals.html"}catch(err){showError("Could not delete this species. Check that browser storage is available.")}}}}formEl.onsubmit=async e=>{e.preventDefault();let a=Object.fromEntries(new FormData(formEl));a.gallery=lines(a.gallery);if(a.photo&&!a.gallery.includes(a.photo))a.gallery.unshift(a.photo);try{if(old){a.id=old.id;await saveOne(a)}else{let base=(a.commonName||"species").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"species",nid=base,n=2;while(all.some(x=>x.id===nid))nid=base+"-"+n++;a.id=nid;await saveOne(a)}location.href="animal.html?id="+encodeURIComponent(a.id)}catch(err){showError("Could not save this species. Check browser storage and available space, then try again.")}}}
+function photoEditorRows(value){
+  return (Array.isArray(value) ? value : lines(value)).map(line => {
+    const split = String(line).indexOf("|");
+    return {headline:split < 0 ? "" : String(line).slice(0,split).trim(), url:split < 0 ? String(line).trim() : String(line).slice(split+1).trim()};
+  });
+}
+function serializePhotoRows(rows){
+  return rows.filter(row => row.url.trim()).map(row => {
+    const headline = row.headline.replace(/[|\r\n]/g," ").trim();
+    return (headline ? headline + " | " : "") + row.url.trim();
+  }).join("\n");
+}
+function installPhotoEditors(formEl){
+  ["gallery","livingPhotos","feedingPhotos"].forEach(name => {
+    const textarea = formEl.elements[name];
+    const label = textarea.closest("label");
+    const heading = document.createElement("div");
+    heading.className = "photo-editor-heading";
+    heading.textContent = label.firstChild.textContent.replace(/ — headline & URL| URLs/g,"").trim();
+    const editor = document.createElement("div"); editor.className = "photo-editor wide";
+    editor.append(heading);
+    label.after(editor); label.hidden = true;
+    const list = document.createElement("div"); editor.append(list);
+    const add = document.createElement("button"); add.type="button"; add.className="btn alt"; add.textContent="Add photo"; editor.append(add);
+    const rows = [];
+    function sync(){textarea.value=serializePhotoRows(rows.map(row=>({headline:row.headline.value,url:row.url.value})));}
+    function addRow(value={headline:"",url:""},focus=false){
+      const row = document.createElement("div"); row.className="photo-editor-row";
+      const controls = {};
+      for(const [field,title] of [["url","Photo URL"],["headline","Headline"]]){
+        const wrapper=document.createElement("label"); wrapper.textContent=title;
+        const input=document.createElement("input"); input.type=field==="url"?"url":"text";input.value=value[field];
+        input.placeholder=field==="url"?"https://...":"A short title for this photo";
+        input.addEventListener("input",sync);wrapper.append(input);row.append(wrapper);controls[field]=input;
+      }
+      const entry={...controls};rows.push(entry);
+      const remove=document.createElement("button");remove.type="button";remove.className="btn alt";remove.textContent="Remove photo";
+      remove.onclick=()=>{rows.splice(rows.indexOf(entry),1);row.remove();sync();add.focus();};row.append(remove);list.append(row);
+      if(focus)controls.url.focus();
+    }
+    photoEditorRows(textarea.value).forEach(value=>addRow(value));
+    add.onclick=()=>addRow(undefined,true);
+    formEl.addEventListener("submit",sync);
+  });
+}
+async function form(){let formEl=document.getElementById("form"),id=new URLSearchParams(location.search).get("edit"),all=await get(),old=id&&all.find(x=>x.id===id);if(database){let panel=document.getElementById("loginPanel"),status=document.getElementById("editorStatus");async function check(){let {data:{user}}=await database.auth.getUser();panel.classList.toggle("hidden",!!user);formEl.classList.toggle("hidden",!user);status.textContent=user?"Signed in as "+user.email:"Sign in to edit species.";document.getElementById("importPanel").classList.toggle("hidden",!user||!localStorage.getItem(KEY))}document.getElementById("loginButton").onclick=async()=>{let email=document.getElementById("loginEmail").value,password=document.getElementById("loginPassword").value;let {error}=await database.auth.signInWithPassword({email,password});if(error)document.getElementById("loginError").textContent=error.message;else await check()};await check();document.getElementById("importButton").onclick=async()=>{let label=document.getElementById("importStatus");try{let entries=localGet();let {error}=await database.from("species").upsert(entries.map(a=>({id:a.id,data:a})));if(error)throw error;label.textContent=entries.length+" species imported. Refresh Explore to see them."}catch(err){label.textContent="Import failed: "+err.message}}}installTaxonomyAutofill(formEl,all);let keys=["commonName","scientificName","category","order","orderCommon","suborder","suborderCommon","superfamily","superfamilyCommon","family","familyCommon","subfamily","subfamilyCommon","tribe","tribeCommon","genus","genusCommon","countries","habitat","system","biomes","climateZones","lifespan","length","weight","sociality","socialNotes","livingDetails","livingPhotos","offspringCount","breedingFrequency","feedingPhotos","feedingVideos","rangeMap","generationLength","migratory","diet","status","trend","threats","useTrade","conservationActions","photo","photoHeadline","facts"];if(old){document.getElementById("title").textContent="Edit species";document.getElementById("save").textContent="Save changes";let deleteBtn=document.getElementById("delete");deleteBtn.classList.remove("hidden");keys.forEach(k=>{if(formEl.elements[k])formEl.elements[k].value=old[k]||""});formEl.elements.gallery.value=(old.gallery||[]).filter(x=>x!==old.photo).join("\n");deleteBtn.onclick=async()=>{if(confirm(`Delete "${old.commonName}"? This cannot be undone.`)){try{await removeOne(id);location.href="animals.html"}catch(err){showError("Could not delete this species. Check that browser storage is available.")}}}}installPhotoEditors(formEl);formEl.onsubmit=async e=>{e.preventDefault();let a=Object.fromEntries(new FormData(formEl));a.gallery=lines(a.gallery);if(a.photo&&!a.gallery.includes(a.photo))a.gallery.unshift(a.photo);try{if(old){a.id=old.id;await saveOne(a)}else{let base=(a.commonName||"species").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"species",nid=base,n=2;while(all.some(x=>x.id===nid))nid=base+"-"+n++;a.id=nid;await saveOne(a)}location.href="animal.html?id="+encodeURIComponent(a.id)}catch(err){showError("Could not save this species. Check browser storage and available space, then try again.")}}}
 function showPageError(error){let main=document.querySelector("main");main.insertAdjacentHTML("afterbegin",`<p role="alert">Could not load species: ${esc(error.message)}</p>`)}
 document.addEventListener("DOMContentLoaded",()=>{if(document.getElementById("cats"))home().catch(showPageError);if(document.getElementById("exploreGroups"))explore().catch(showPageError);if(document.getElementById("record"))renderRecord().catch(showPageError);if(document.getElementById("form"))form().catch(showPageError)})

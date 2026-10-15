@@ -54,3 +54,5 @@ img.map{display:block;width:min(100%,1000px);height:auto;max-height:none;object-
 #record > .section > h2{padding-bottom:10px;border-bottom:1px solid var(--line);margin-bottom:20px;font-size:28px}#record .box h3{margin-bottom:10px}#form > section + section{margin-top:38px}
 
 .field-help{display:block;margin-top:7px;color:var(--muted);font-size:13px;font-weight:normal}.threat-group + .threat-group{margin-top:18px}.threat-title{margin:0;font-weight:bold;color:var(--dark)}.threat-details{margin:6px 0 0;padding-left:22px;font-size:15px;list-style:disc}.threat-details li + li{margin-top:4px}.threats-box{grid-column:1/-1}
+
+.photo-editor-heading{font-size:14px;font-weight:bold;margin-bottom:10px}.photo-editor-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:14px;border:1px solid var(--line);background:var(--cream);margin-bottom:12px}.photo-editor-row input{margin-top:5px}.photo-editor-row .btn{grid-column:1/-1;justify-self:start;font-size:13px}.photo-editor > .btn{font-size:14px}@media(max-width:520px){.photo-editor-row{grid-template-columns:1fr}}
